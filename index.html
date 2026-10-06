@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pirate Adventure - 배는 어디로 가는가</title>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c5364;
+            --accent: #ff6e40;
+            --safe: #2e7d32;
+            --danger: #d32f2f;
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --text: #2d3748;
+        }
+        body {
+            font-family: 'Jua', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            min-height: 100vh;
+            box-shadow: 0 0 40px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            padding: 20px;
+            border: 6px solid #ffcc00;
+            border-radius: 16px;
+        }
+        h1, h2, h3 { text-align: center; color: #b75303; text-shadow: 1px 1px 0px #ffe066; }
+        .hidden { display: none !important; }
+        
+        .map-stage {
+            width: 100%;
+            height: 180px;
+            background-image: url('map.png');
+            background-size: cover;
+            background-position: center;
+            border-radius: 12px;
+            position: relative;
+            margin-bottom: 12px;
+            border: 3px solid #8d5524;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .map-ship {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background-image: url('ship.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            transition: all 0.8s ease-in-out;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5));
+            z-index: 10;
+        }
+
+        .lobby-box {
+            background: #fff8e7;
+            border: 2px dashed #f59e0b;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+        .player-list { list-style: none; padding: 0; margin: 0; }
+        .player-list li {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            background: #fff;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .btn-kick {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: none;
+            flex: none;
+        }
+
+        .top-bar {
+            background: #fff3e0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            border-left: 5px solid var(--accent);
+            line-height: 1.3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .status-panel {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: #e3f2fd;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            border: 2px solid #90caf9;
+        }
+        .hearts { color: var(--danger); font-size: 20px; letter-spacing: 2px; }
+        
+        .btn-group { display: flex; gap: 12px; margin-top: 10px; }
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            font-family: 'Jua', sans-serif;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+        .btn-left { background-color: var(--danger); color: white; }
+        .btn-right { background-color: var(--safe); color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; margin-top: 8px; }
+        button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+        button:disabled { background-color: #cccccc !important; cursor: not-allowed; color: #666; box-shadow: none; }
+        
+        .scoreboard {
+            background: #fffbe6;
+            border: 2px solid #ffe58f;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .scoreboard h3 { margin-top: 0; font-size: 17px; }
+        .score-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
+        .score-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ffd666; font-size: 15px; }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0 20px 0;
+            border: 2px solid #f59e0b;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 17px;
+            font-family: 'Jua', sans-serif;
+            background: #fffdf5;
+            text-align: center;
+        }
+        .timer-box {
+            text-align: center;
+            font-size: 18px;
+            color: var(--accent);
+            margin: 6px 0;
+            background: #fff0eb;
+            padding: 6px;
+            border-radius: 8px;
+            border: 2px dashed #ff7043;
+        }
+        .round-info {
+            text-align: center;
+            font-weight: bold;
+            color: #b75303;
+            margin-bottom: 6px;
+            font-size: 17px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-box {
+            background: #fff;
+            width: 85%;
+            max-width: 380px;
+            padding: 25px;
+            border-radius: 16px;
+            border: 5px solid #f59e0b;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            animation: popIn 0.3s ease-out;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-box h2 { color: #b75303; margin-top: 0; }
+        .modal-box p { font-size: 15px; line-height: 1.5; color: #444; text-align: left; background: #fff8e7; padding: 12px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1. 로그인 화면 -->
+    <div id="screen-login" class="screen">
+        <h1 style="font-size: 30px; margin-top: 20px;">🏴‍☠️ Pirate Adventure</h1>
+        <p style="text-align:center; color:#666; font-size:15px;">해적섬을 탈출하는 협동 사회적 딜레마</p>
+        <div style="margin-top: 25px; text-align: center;">
+            <img src="ship.png" style="width: 110px; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2)); margin-bottom: 10px;">
+            <label style="display:block; font-size:16px; margin-bottom:5px;">항해사 성함(닉네임)을 입력하세요:</label>
+            <input type="text" id="nickname-input" placeholder="예: 캡틴루피">
+            <button class="btn-right" id="btn-join">대기실 입장하기</button>
+        </div>
+    </div>
+
+    <!-- 2. 대기실 화면 -->
+    <div id="screen-lobby" class="screen hidden">
+        <h2>👥 항해 대기실</h2>
+        <p id="player-count-text" style="text-align:center; font-weight:bold; color:var(--accent);">현재 접속 인원: 0명</p>
+        
+        <div class="lobby-box">
+            <p style="margin:0 0 10px 0; font-size:14px; font-weight:bold; color:#b75303;">📋 탑승 대기중인 항해사들:</p>
+            <ul class="player-list" id="lobby-player-list"></ul>
+        </div>
+
+        <button class="btn-secondary" id="btn-add-bot">🤖 테스트용 봇 태우기</button>
+        <button class="btn-right" id="btn-start" style="margin-top: 10px;">🚀 닻을 올리고 항해 시작!</button>
+    </div>
+
+    <!-- 3. 게임 플레이 화면 -->
+    <div id="screen-game" class="screen hidden">
+        <div class="round-info" id="round-title-display">라운드 1 / 5</div>
+        
+        <div class="map-stage" id="map-stage">
+            <div class="map-ship" id="map-ship"></div>
+        </div>
+
+        <div class="top-bar" id="personal-mission-text">
+            📌 미션 로딩 중...
+        </div>
+
+        <div class="status-panel">
+            <div>배 목숨: <span class="hearts" id="game-hearts">♥♥♥</span></div>
+            <div>내 금덩이: <span id="my-gold-count" style="color: #d4af37;">🪙 0개</span></div>
+        </div>
+
+        <div class="timer-box" id="timer-display">제한 시간: 30초</div>
+
+        <div class="btn-group" id="voting-buttons">
+            <button class="btn-left" id="btn-vote-left">🏴‍☠️ 왼쪽 (위협)</button>
+            <button class="btn-right" id="btn-vote-right">⚓ 오른쪽 (안전)</button>
+        </div>
+        <p id="vote-status-msg" style="text-align:center; font-weight:bold; margin-top:10px; color:var(--accent); font-size:14px;"></p>
+    </div>
+
+    <!-- 4. 게임 종료 화면 -->
+    <div id="screen-end" class="screen hidden">
+        <h2 style="font-size: 24px;">🎉 항해 대장정 종료</h2>
+        <div id="end-result-desc" style="text-align: center; font-size: 14px; margin: 10px 0; font-weight: bold;"></div>
+        <div class="scoreboard" style="margin-top: 10px;">
+            <h3>🏆 최종 보물 스코어보드</h3>
+            <ul class="score-list" id="final-score-list"></ul>
+        </div>
+        <button class="btn-right" id="btn-reset-game" style="margin-top: 15px; width: 100%;">🔄 대기실로 돌아가기 (인원 초기화)</button>
+    </div>
+</div>
+
+<!-- 규칙 및 미션 안내 팝업 모달 -->
+<div id="rule-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h2 id="modal-title">📜 항해 규칙 및 미션 안내</h2>
+        <p id="modal-desc">룰 내용이 들어갑니다.</p>
+        <button class="btn-right" id="modal-close-btn" style="margin-top: 15px; width: 100%;">항해 시작하기! ⛵</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import { getDatabase, ref, set, update, onValue, remove } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBnwOVem10HCPtUv2EwIprtZCdQHSADU_o",
+        authDomain: "art-3-44e6d.firebaseapp.com",
+        databaseURL: "https://art-3-44e6d-default-rtdb.firebaseio.com",
+        projectId: "art-3-44e6d",
+        storageBucket: "art-3-44e6d.firebasestorage.app",
+        messagingSenderId: "362118335032",
+        appId: "1:362118335032:web:e8b4e18370123456789abc",
+        measurementId: "G-TBTC62R6XQ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let myNickname = "";
+    let currentRound = 1;
+    let hasVotedThisRound = false;
+    let hostTimer = null;
+    let isJoined = false;
+    let lastShownModalRound = 0;
+
+    const islandCoordinates = {
+        1: { top: '32%', left: '15%' },
+        2: { top: '18%', left: '42%' },
+        3: { top: '28%', left: '72%' },
+        4: { top: '62%', left: '55%' },
+        5: { top: '62%', left: '22%' }
+    };
+
+    onValue(ref(db, 'players'), (snapshot) => {
+        if (!isJoined) return;
+        const players = snapshot.val() || {};
+        const listEl = document.getElementById('lobby-player-list');
+        const countText = document.getElementById('player-count-text');
+        
+        listEl.innerHTML = '';
+        let count = 0;
+
+        for(let name in players) {
+            count++;
+            let li = document.createElement('li');
+            li.innerHTML = `<span>⛵ ${name} ${name === myNickname ? '(나)' : ''}</span> 
+                            <div>
+                                <span style="color:var(--safe); font-weight:bold; margin-right: 8px;">탑승 완료</span>
+                                <button class="btn-kick" onclick="window.kickPlayer('${name}')">강퇴</button>
+                            </div>`;
+            listEl.appendChild(li);
+        }
+
+        countText.innerText = `현재 탑승 인원: ${count}명`;
+    });
+
+    // 강퇴 전역 함수 등록
+    window.kickPlayer = function(targetName) {
+        remove(ref(db, 'players/' + targetName)).catch(err => console.log(err));
+    };
+
+    onValue(ref(db, 'gameState'), (snapshot) => {
+        if (!isJoined) return;
+        const state = snapshot.val();
+        if (!state) return;
+
+        if (state.status === 'waiting') {
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-end').classList.add('hidden');
+            document.getElementById('screen-lobby').classList.remove('hidden');
+            document.getElementById('rule-modal').classList.add('hidden');
+            lastShownModalRound = 0;
+            hasVotedThisRound = false;
+        } 
+        else if (state.status === 'playing') {
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-lobby').classList.add('hidden');
+            document.getElementById('screen-end').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            if (currentRound !== state.round) {
+                currentRound = state.round;
+                hasVotedThisRound = false;
+                document.getElementById('btn-vote-left').disabled = false;
+                document.getElementById('btn-vote-right').disabled = false;
+                document.getElementById('vote-status-msg').innerText = "";
+            }
+
+            let timeLeft = state.timeLeft !== undefined ? state.timeLeft : 30;
+            document.getElementById('timer-display').innerText = `⏳ 제한 시간: ${timeLeft}초`;
+
+            updateUIByRound(currentRound, state.hearts);
+
+            if (lastShownModalRound !== currentRound) {
+                lastShownModalRound = currentRound;
+                showRuleModal(currentRound);
+            }
+
+            if (!hostTimer) {
+                startHostTimer();
+            }
+        } 
+        else if (state.status === 'ended') {
+            if (hostTimer) clearInterval(hostTimer);
+            hostTimer = null;
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-lobby').classList.add('hidden');
+            document.getElementById('screen-end').classList.remove('hidden');
+            document.getElementById('rule-modal').classList.add('hidden');
+            showFinalResults(state.hearts > 0);
+        }
+    });
+
+    document.getElementById('btn-join').addEventListener('click', () => {
+        const input = document.getElementById('nickname-input').value.trim();
+        if(!input) {
+            alert('항해사 닉네임을 입력해주세요!');
+            return;
+        }
+        myNickname = input;
+        isJoined = true;
+
+        update(ref(db, 'players/' + myNickname), {
+            gold: 0,
+            vote: null,
+            hasVoted: false
+        }).catch(err => console.log(err));
+
+        onValue(ref(db, 'players/' + myNickname + '/gold'), (snap) => {
+            const gold = snap.val() || 0;
+            document.getElementById('my-gold-count').innerText = `🪙 ${gold}개`;
+        });
+
+        document.getElementById('screen-login').classList.add('hidden');
+        document.getElementById('screen-lobby').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-add-bot').addEventListener('click', () => {
+        const botName = "해적봇_" + Math.floor(Math.random() * 100);
+        set(ref(db, 'players/' + botName), {
+            gold: 0,
+            vote: null,
+            hasVoted: false
+        }).catch(err => console.log(err));
+    });
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+        set(ref(db, 'gameState'), {
+            status: 'playing',
+            round: 1,
+            hearts: 3,
+            timeLeft: 30
+        }).catch(err => console.log(err));
+    });
+
+    // 대기실로 돌아가기 + 모든 플레이어 삭제(인원 초기화) 및 게임 상태 리셋
+    document.getElementById('btn-reset-game').addEventListener('click', () => {
+        set(ref(db, 'gameState'), {
+            status: 'waiting',
+            round: 1,
+            hearts: 3,
+            timeLeft: 30
+        }).catch(err => console.log(err));
+
+        // 파이어베이스의 players 데이터 전체 삭제 (모든 인원 퇴장 처리)
+        remove(ref(db, 'players')).then(() => {
+            // 내가 다시 대기실에 들어오도록 내 닉네임만 새로 등록
+            set(ref(db, 'players/' + myNickname), {
+                gold: 0,
+                vote: null,
+                hasVoted: false
+            });
+        }).catch(err => console.log(err));
+    });
+
+    document.getElementById('btn-vote-left').addEventListener('click', () => castVote('left'));
+    document.getElementById('btn-vote-right').addEventListener('click', () => castVote('right'));
+
+    document.getElementById('modal-close-btn').addEventListener('click', () => {
+        document.getElementById('rule-modal').classList.add('hidden');
+    });
+
+    function showRuleModal(round) {
+        let title = `📜 [라운드 ${round}] 항해 규칙 & 미션`;
+        let desc = "";
+
+        if (round === 1) {
+            desc = `<b>⚓ 기본 항해 규칙:</b><br>` +
+                   `• 배의 방향은 <b>다수결</b>을 따릅니다!<br>` +
+                   `• 왼쪽(위협)이 많거나 동률이면 배 목숨이 깎입니다.<br><br>` +
+                   `🎯 <b>내 개인 미션:</b><br>` +
+                   `• <b>'오른쪽(안전)'</b>을 선택하면 금덩이 1개 획득!`;
+        } else if (round === 2) {
+            desc = `<b>⚓ 기본 항해 규칙:</b><br>` +
+                   `• 배의 방향은 <b>다수결</b>을 따릅니다!<br><br>` +
+                   `🎯 <b>내 개인 미션:</b><br>` +
+                   `• <b>다수파와 다른 방향</b>을 선택하면 금덩이 1개 획득! (역발상 미션)`;
+        } else if (round === 3) {
+            desc = `<b>⚓ 기본 항해 규칙:</b><br>` +
+                   `• 배의 방향은 <b>다수결</b>을 따릅니다!<br><br>` +
+                   `🎯 <b>내 개인 미션:</b><br>` +
+                   `• <b>'왼쪽(위협)'</b>을 선택하면 금덩이 1개 획득!`;
+        } else if (round === 4) {
+            desc = `<b>⚓ 기본 항해 규칙:</b><br>` +
+                   `• 배의 방향은 <b>다수결</b>을 따릅니다!<br><br>` +
+                   `🎯 <b>내 개인 미션:</b><br>` +
+                   `• 제한 시간 동안 <b>끝까지 버튼을 누르지 않으면</b> 금덩이 2개 획득!`;
+        } else if (round === 5) {
+            desc = `<b>🔥 최종 라운드 규칙:</b><br>` +
+                   `• 배의 운명이 걸린 마지막 항해입니다!<br><br>` +
+                   `🎯 <b>내 개인 미션:</b><br>` +
+                   `• <b>'왼쪽(위협)'</b>을 선택하면 금덩이 3개 획득!`;
+        }
+
+        document.getElementById('modal-title').innerHTML = title;
+        document.getElementById('modal-desc').innerHTML = desc;
+        document.getElementById('rule-modal').classList.remove('hidden');
+    }
+
+    function startHostTimer() {
+        if (hostTimer) clearInterval(hostTimer);
+        
+        hostTimer = setInterval(() => {
+            onValue(ref(db, 'gameState'), (snapshot) => {
+                const state = snapshot.val();
+                if (!state || state.status !== 'playing') return;
+
+                let newTime = (state.timeLeft || 30) - 1;
+                if (newTime <= 0) {
+                    if (hostTimer) clearInterval(hostTimer);
+                    hostTimer = null;
+                    forceProcessRoundEnd();
+                } else {
+                    update(ref(db, 'gameState'), { timeLeft: newTime }).catch(e=>{});
+                    checkAllVoted();
+                }
+            }, { onlyOnce: true });
+        }, 1000);
+    }
+
+    function updateUIByRound(round, hearts) {
+        document.getElementById('round-title-display').innerText = `라운드 ${round} / 5 (섬 도착)`;
+        let heartStr = '♥'.repeat(Math.max(0, hearts));
+        document.getElementById('game-hearts').innerText = heartStr;
+        
+        const shipEl = document.getElementById('map-ship');
+        const pos = islandCoordinates[round] || islandCoordinates[1];
+        shipEl.style.top = pos.top;
+        shipEl.style.left = pos.left;
+
+        const missionEl = document.getElementById('personal-mission-text');
+        let roundMissionDesc = "";
+        if(round === 1) roundMissionDesc = "오른쪽(안전) 선택 시 금 +1";
+        else if(round === 2) roundMissionDesc = "다수와 다른 방향 선택 시 금 +1";
+        else if(round === 3) roundMissionDesc = "'왼쪽' 선택 시 금 +1";
+        else if(round === 4) roundMissionDesc = "버튼 미클릭 시 금 +2";
+        else if(round === 5) roundMissionDesc = "'왼쪽' 선택 시 금 +3";
+
+        missionEl.innerHTML = `📌 <b>[미션]</b> ${roundMissionDesc} | ⚓ <b>[공통]</b> 배는 다수결 방향 이동 (위협/동률시 목숨 -1)`;
+    }
+
+    function castVote(choice) {
+        if(hasVotedThisRound) return;
+        hasVotedThisRound = true;
+
+        document.getElementById('btn-vote-left').disabled = true;
+        document.getElementById('btn-vote-right').disabled = true;
+
+        update(ref(db, 'players/' + myNickname), {
+            vote: choice,
+            hasVoted: true
+        }).catch(err => console.log(err));
+
+        document.getElementById('vote-status-msg').innerText = "✅ 선택 완료! 동료들의 결정을 기다리는 중...";
+
+        checkAllVoted();
+    }
+
+    function checkAllVoted() {
+        onValue(ref(db, 'players'), (snapshot) => {
+            const players = snapshot.val() || {};
+            let updates = {};
+            let allDone = true;
+
+            for (let name in players) {
+                if (!players[name].hasVoted) {
+                    if (name.startsWith("해적봇_")) {
+                        const choices = ['left', 'right', 'none'];
+                        updates[name + '/vote'] = choices[Math.floor(Math.random() * choices.length)];
+                        updates[name + '/hasVoted'] = true;
+                    } else {
+                        allDone = false;
+                    }
+                }
+            }
+
+            if (Object.keys(updates).length > 0) {
+                update(ref(db, 'players'), updates).catch(e=>{});
+            }
+
+            if (allDone) {
+                if (hostTimer) {
+                    clearInterval(hostTimer);
+                    hostTimer = null;
+                }
+                forceProcessRoundEnd();
+            }
+        }, { onlyOnce: true });
+    }
+
+    function forceProcessRoundEnd() {
+        onValue(ref(db, 'players'), (playersSnap) => {
+            const players = playersSnap.val() || {};
+            onValue(ref(db, 'gameState'), (gameStateSnap) => {
+                const gameState = gameStateSnap.val() || { round: 1, hearts: 3 };
+                let currentHearts = gameState.hearts;
+                let round = gameState.round;
+
+                let leftCount = 0;
+                let rightCount = 0;
+                let unvotedCount = 0;
+
+                for (let name in players) {
+                    let p = players[name];
+                    if (!p.hasVoted || p.vote === null || p.vote === undefined) {
+                        unvotedCount++;
+                    } else {
+                        if (p.vote === 'left') leftCount++;
+                        if (p.vote === 'right') rightCount++;
+                    }
+                }
+
+                let updates = {};
+
+                for (let name in players) {
+                    let p = players[name];
+                    let currentGold = p.gold || 0;
+                    let addedGold = 0;
+                    let userVote = (p.hasVoted && p.vote) ? p.vote : 'none';
+
+                    if (round === 1) {
+                        if (userVote === 'right') addedGold += 1;
+                    } else if (round === 2) {
+                        let majority = leftCount >= rightCount ? 'left' : 'right';
+                        if (userVote && userVote !== 'none' && userVote !== majority) addedGold += 1;
+                    } else if (round === 3) {
+                        if (userVote === 'left') addedGold += 1;
+                    } else if (round === 4) {
+                        if (userVote === 'none') addedGold += 2;
+                    } else if (round === 5) {
+                        if (userVote === 'left') addedGold += 3;
+                    }
+
+                    updates['players/' + name + '/gold'] = currentGold + addedGold;
+                    updates['players/' + name + '/vote'] = null;
+                    updates['players/' + name + '/hasVoted'] = false;
+                }
+
+                let shouldLoseHeart = false;
+                let penaltyReason = "";
+
+                if (leftCount >= rightCount) {
+                    shouldLoseHeart = true;
+                    penaltyReason = "왼쪽(위협) 우세 또는 동률";
+                }
+                if (unvotedCount > 0) {
+                    shouldLoseHeart = true;
+                    penaltyReason = penaltyReason ? penaltyReason + " 및 미투표자 발생" : "시간 내 미투표자 발생";
+                }
+
+                if (shouldLoseHeart) {
+                    currentHearts -= 1;
+                }
+
+                update(ref(db), updates).catch(e=>{});
+
+                if (shouldLoseHeart) {
+                    document.getElementById('vote-status-msg').innerText = `💥 [라운드 ${round}] 위협으로 배가 흔들렸다! (${penaltyReason}) / 남은 목숨: ${currentHearts}`;
+                } else {
+                    document.getElementById('vote-status-msg').innerText = `✨ [라운드 ${round}] 무사히 다음 섬으로 전진 성공!`;
+                }
+
+                setTimeout(() => {
+                    let nextState = {};
+                    if (round >= 5 || currentHearts <= 0) {
+                        nextState = {
+                            status: 'ended',
+                            round: round,
+                            hearts: Math.max(0, currentHearts),
+                            timeLeft: 0
+                        };
+                    } else {
+                        nextState = {
+                            status: 'playing',
+                            round: round + 1,
+                            hearts: Math.max(0, currentHearts),
+                            timeLeft: 30
+                        };
+                    }
+                    set(ref(db, 'gameState'), nextState).catch(e=>{});
+                }, 3500);
+
+            }, { onlyOnce: true });
+        }, { onlyOnce: true });
+    }
+
+    function showFinalResults(isSurvived) {
+        const resultDesc = document.getElementById('end-result-desc');
+        if(isSurvived) {
+            resultDesc.innerHTML = "🎉 모든 섬을 거쳐 해적섬을 탈출했습니다!";
+            resultDesc.style.color = "var(--safe)";
+        } else {
+            resultDesc.innerHTML = "💥 배가 난파되었습니다... 모아둔 보물이 모두 수장되었습니다!";
+            resultDesc.style.color = "var(--danger)";
+        }
+
+        onValue(ref(db, 'players'), (snapshot) => {
+            const players = snapshot.val() || {};
+            const finalScoreList = document.getElementById('final-score-list');
+            finalScoreList.innerHTML = '';
+
+            for(let name in players) {
+                let pGold = isSurvived ? (players[name].gold || 0) : 0;
+                let finalScore = pGold * 30;
+
+                let li = document.createElement('li');
+                li.className = 'score-item';
+                li.innerHTML = `<span>⛵ ${name}</span> <span>🪙 금 ${pGold}개 | 점수: ${finalScore}점</span>`;
+                finalScoreList.appendChild(li);
+            }
+        }, { onlyOnce: true });
+    }
+</script>
+
+</body>
+</html>
