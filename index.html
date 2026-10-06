@@ -238,7 +238,9 @@
         </div>
 
         <button class="btn-secondary" id="btn-add-bot">🤖 테스트용 봇 태우기</button>
-        <button class="btn-right" id="btn-start" style="margin-top: 10px;">🚀 닻을 올리고 항해 시작!</button>
+        <!-- 다시 방장만 시작할 수 있도록 hidden 복구 -->
+        <button class="btn-right hidden" id="btn-start" style="margin-top: 10px;">🚀 닻을 올리고 항해 시작!</button>
+        <p id="waiting-msg" style="text-align:center; color:#666; font-size:14px; margin-top:10px;">방장이 게임을 시작하길 기다리는 중...</p>
     </div>
 
     <!-- 3. 게임 플레이 화면 -->
@@ -312,6 +314,7 @@
     let hostTimer = null;
     let isJoined = false;
     let lastShownModalRound = 0;
+    let isHost = false;
 
     const islandCoordinates = {
         1: { top: '32%', left: '15%' },
@@ -330,6 +333,18 @@
         listEl.innerHTML = '';
         let count = 0;
 
+        const playerNames = Object.keys(players);
+        // 접속한 플레이어 중 첫 번째 사람이 방장
+        if (playerNames.length > 0 && playerNames[0] === myNickname) {
+            isHost = true;
+            document.getElementById('btn-start').classList.remove('hidden');
+            document.getElementById('waiting-msg').innerText = "당신은 방장입니다! 준비가 되면 출발하세요!";
+        } else {
+            isHost = false;
+            document.getElementById('btn-start').classList.add('hidden');
+            document.getElementById('waiting-msg').innerText = "방장이 게임을 시작하길 기다리는 중...";
+        }
+
         for(let name in players) {
             count++;
             let li = document.createElement('li');
@@ -344,7 +359,6 @@
         countText.innerText = `현재 탑승 인원: ${count}명`;
     });
 
-    // 강퇴 전역 함수 등록
     window.kickPlayer = function(targetName) {
         remove(ref(db, 'players/' + targetName)).catch(err => console.log(err));
     };
@@ -444,7 +458,6 @@
         }).catch(err => console.log(err));
     });
 
-    // 대기실로 돌아가기 + 모든 플레이어 삭제(인원 초기화) 및 게임 상태 리셋
     document.getElementById('btn-reset-game').addEventListener('click', () => {
         set(ref(db, 'gameState'), {
             status: 'waiting',
@@ -453,9 +466,7 @@
             timeLeft: 30
         }).catch(err => console.log(err));
 
-        // 파이어베이스의 players 데이터 전체 삭제 (모든 인원 퇴장 처리)
         remove(ref(db, 'players')).then(() => {
-            // 내가 다시 대기실에 들어오도록 내 닉네임만 새로 등록
             set(ref(db, 'players/' + myNickname), {
                 gold: 0,
                 vote: null,
